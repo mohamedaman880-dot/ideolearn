@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Admin {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String     @unique @db.VarChar(255)
+  passwordHash String     @map("password_hash") @db.VarChar(255)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+  auditLogs    AuditLog[]
+
+  @@map("admins")
+}
+
+model University {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug               String        @unique @db.VarChar(180)
+  nameEn             String        @map("name_en") @db.VarChar(200)
+  nameAr             String        @map("name_ar") @db.VarChar(200)
+  shortDescEn        String        @map("short_desc_en") @db.Text
+  shortDescAr        String        @map("short_desc_ar") @db.Text
+  fullDescEn         String        @map("full_desc_en") @db.Text
+  fullDescAr         String        @map("full_desc_ar") @db.Text
+  city               String        @db.VarChar(120)
+  country            String        @default("Rwanda") @db.VarChar(120)
+  officialWebsiteUrl String?       @map("official_website_url") @db.VarChar(500)
+  logoUrl            String?       @map("logo_url") @db.VarChar(500)
+  galleryUrls        String[]      @default([]) @map("gallery_urls")
+  facultiesEn        String[]      @default([]) @map("faculties_en")
+  facultiesAr        String[]      @default([]) @map("faculties_ar")
+  generalAdmissionEn String?       @map("general_admission_en") @db.Text
+  generalAdmissionAr String?       @map("general_admission_ar") @db.Text
+  referenceLinks     Json          @default("[]") @map("reference_links")
+  isFeatured         Boolean       @default(false) @map("is_featured")
+  status             PublishStatus @default(DRAFT)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  programs           Program[]
+
+  @@index([status, isFeatured], map: "idx_universities_status_featured")
+  @@index([status, city], map: "idx_universities_status_city")
+  @@map("universities")
+}
+
+model Program {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  universityId       String        @map("university_id") @db.Uuid
+  slug               String        @unique @db.VarChar(200)
+  nameEn             String        @map("name_en") @db.VarChar(220)
+  nameAr             String        @map("name_ar") @db.VarChar(220)
+  descriptionEn      String        @map("description_en") @db.Text
+  descriptionAr      String        @map("description_ar") @db.Text
+  facultyEn          String        @map("faculty_en") @db.VarChar(160)
+  facultyAr          String        @map("faculty_ar") @db.VarChar(160)
+  durationYears      Decimal       @map("duration_years") @db.Decimal(3, 1)
+  annualTuitionUsd   Decimal?      @map("annual_tuition_usd") @db.Decimal(10, 2)
+  totalTuitionUsd    Decimal?      @map("total_tuition_usd") @db.Decimal(10, 2)
+  admissionReqEn     String        @map("admission_req_en") @db.Text
+  admissionReqAr     String        @map("admission_req_ar") @db.Text
+  requiredDocsEn     String        @map("required_docs_en") @db.Text
+  requiredDocsAr     String        @map("required_docs_ar") @db.Text
+  appOpenDate        DateTime?     @map("app_open_date") @db.Date
+  appCloseDate       DateTime?     @map("app_close_date") @db.Date
+  confirmationNoteEn String?       @map("confirmation_note_en") @db.Text
+  confirmationNoteAr String?       @map("confirmation_note_ar") @db.Text
+  status             PublishStatus @default(DRAFT)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  university         University    @relation(fields: [universityId], references: [id], onDelete: Restrict)
+
+  @@index([status, universityId], map: "idx_programs_status_university")
+  @@index([status, facultyEn], map: "idx_programs_status_faculty")
+  @@index([status, durationYears], map: "idx_programs_status_duration")
+  @@index([status, annualTuitionUsd], map: "idx_programs_status_tuition")
+  @@map("programs")
+}
+
+model Service {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  titleEn           String        @map("title_en") @db.VarChar(180)
+  titleAr           String        @map("title_ar") @db.VarChar(180)
+  descriptionEn     String        @map("description_en") @db.Text
+  descriptionAr     String        @map("description_ar") @db.Text
+  imageUrl          String?       @map("image_url") @db.VarChar(500)
+  whatsappMessageEn String        @map("whatsapp_message_en") @db.VarChar(500)
+  whatsappMessageAr String        @map("whatsapp_message_ar") @db.VarChar(500)
+  displayOrder      Int           @default(0) @map("display_order")
+  isFeatured        Boolean       @default(false) @map("is_featured")
+  status            PublishStatus @default(DRAFT)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, displayOrder], map: "idx_services_status_order")
+  @@map("services")
+}
+
+model Faq {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  questionEn   String        @map("question_en") @db.VarChar(400)
+  questionAr   String        @map("question_ar") @db.VarChar(400)
+  answerEn     String        @map("answer_en") @db.Text
+  answerAr     String        @map("answer_ar") @db.Text
+  categoryEn   String?       @map("category_en") @db.VarChar(100)
+  categoryAr   String?       @map("category_ar") @db.VarChar(100)
+  displayOrder Int           @default(0) @map("display_order")
+  status       PublishStatus @default(DRAFT)
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, displayOrder], map: "idx_faqs_status_order")
+  @@map("faqs")
+}
+
+model Article {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug             String        @unique @db.VarChar(200)
+  titleEn          String        @map("title_en") @db.VarChar(250)
+  titleAr          String        @map("title_ar") @db.VarChar(250)
+  excerptEn        String        @map("excerpt_en") @db.Text
+  excerptAr        String        @map("excerpt_ar") @db.Text
+  contentEn        String        @map("content_en") @db.Text
+  contentAr        String        @map("content_ar") @db.Text
+  categoryEn       String        @map("category_en") @db.VarChar(120)
+  categoryAr       String        @map("category_ar") @db.VarChar(120)
+  coverImageUrl    String?       @map("cover_image_url") @db.VarChar(500)
+  seoTitleEn       String?       @map("seo_title_en") @db.VarChar(160)
+  seoTitleAr       String?       @map("seo_title_ar") @db.VarChar(160)
+  seoDescriptionEn String?       @map("seo_description_en") @db.VarChar(320)
+  seoDescriptionAr String?       @map("seo_description_ar") @db.VarChar(320)
+  status           PublishStatus @default(DRAFT)
+  publishedAt      DateTime?     @map("published_at") @db.Timestamptz
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, publishedAt(sort: Desc)], map: "idx_articles_status_published")
+  @@index([status, categoryEn], map: "idx_articles_status_category")
+  @@map("articles")
+}
+
+model PageSection {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pageKey      String        @map("page_key") @db.VarChar(50)
+  sectionKey   String        @map("section_key") @db.VarChar(80)
+  titleEn      String?       @map("title_en") @db.VarChar(250)
+  titleAr      String?       @map("title_ar") @db.VarChar(250)
+  subtitleEn   String?       @map("subtitle_en") @db.Text
+  subtitleAr   String?       @map("subtitle_ar") @db.Text
+  bodyEn       String?       @map("body_en") @db.Text
+  bodyAr       String?       @map("body_ar") @db.Text
+  imageUrl     String?       @map("image_url") @db.VarChar(500)
+  extraData    Json          @default("{}") @map("extra_data")
+  displayOrder Int           @default(0) @map("display_order")
+  status       PublishStatus @default(DRAFT)
+  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([pageKey, sectionKey])
+  @@index([pageKey, status, displayOrder], map: "idx_page_sections_lookup")
+  @@map("page_sections")
+}
+
+model SiteSettings {
+  id               String   @id @default("default") @db.VarChar(32)
+  whatsappNumber   String?  @map("whatsapp_number") @db.VarChar(30)
+  phoneNumber      String?  @map("phone_number") @db.VarChar(30)
+  email            String?  @db.VarChar(255)
+  addressEn        String?  @map("address_en") @db.VarChar(300)
+  addressAr        String?  @map("address_ar") @db.VarChar(300)
+  socialLinks      Json     @default("{}") @map("social_links")
+  accuracyNoticeEn String   @map("accuracy_notice_en") @db.Text
+  accuracyNoticeAr String   @map("accuracy_notice_ar") @db.Text
+  legalNoticeEn    String?  @map("legal_notice_en") @db.Text
+  legalNoticeAr    String?  @map("legal_notice_ar") @db.Text
+  faqsEnabled      Boolean  @default(true) @map("faqs_enabled")
+  articlesEnabled  Boolean  @default(true) @map("articles_enabled")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("site_settings")
+}
+
+model MediaAsset {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  storageBucket String   @default("ideolearn-media") @map("storage_bucket") @db.VarChar(80)
+  storagePath   String   @unique @map("storage_path") @db.VarChar(400)
+  publicUrl     String   @map("public_url") @db.VarChar(600)
+  mimeType      String   @map("mime_type") @db.VarChar(80)
+  sizeBytes     Int      @map("size_bytes")
+  altTextEn     String?  @map("alt_text_en") @db.VarChar(250)
+  altTextAr     String?  @map("alt_text_ar") @db.VarChar(250)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("media_assets")
+}
+
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  adminId    String?  @map("admin_id") @db.Uuid
+  action     String   @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(60)
+  entityId   String?  @map("entity_id") @db.VarChar(100)
+  details    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  admin      Admin?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId], map: "idx_audit_logs_entity")
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created")
+  @@map("audit_logs")
+}
