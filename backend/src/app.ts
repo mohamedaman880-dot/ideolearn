@@ -14,6 +14,13 @@ import { publicFaqsRouter } from "./modules/faqs/faqs.routes";
 import { publicArticlesRouter } from "./modules/articles/articles.routes";
 import { publicSiteContentRouter } from "./modules/siteContent/siteContent.routes";
 import { sitemapRouter } from "./modules/seo/sitemap.routes";
+import { adminDashboardRouter } from "./modules/dashboard/dashboard.routes";
+import { adminUniversitiesRouter } from "./modules/universities/universities.admin.routes";
+import { adminProgramsRouter } from "./modules/programs/programs.admin.routes";
+import { adminServicesRouter } from "./modules/services/services.admin.routes";
+import { adminFaqsRouter } from "./modules/faqs/faqs.admin.routes";
+import { adminArticlesRouter } from "./modules/articles/articles.admin.routes";
+import { adminSiteContentRouter } from "./modules/siteContent/siteContent.admin.routes";
 
 export const app = express();
 
@@ -56,6 +63,15 @@ app.use("/", sitemapRouter);
 // Admin Authentication & Audit Trail
 app.use("/api/v1/admin/auth", authRouter);
 app.use("/api/v1/admin/audit-logs", auditLogsRouter);
+
+// Admin CMS CRUD & Configuration APIs
+app.use("/api/v1/admin/dashboard", adminDashboardRouter);
+app.use("/api/v1/admin/universities", adminUniversitiesRouter);
+app.use("/api/v1/admin/programs", adminProgramsRouter);
+app.use("/api/v1/admin/services", adminServicesRouter);
+app.use("/api/v1/admin/faqs", adminFaqsRouter);
+app.use("/api/v1/admin/articles", adminArticlesRouter);
+app.use("/api/v1/admin", adminSiteContentRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
